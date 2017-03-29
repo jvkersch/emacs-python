@@ -12,7 +12,7 @@ Pymacs requires a recent build of Emacs (>= 25.1) *with module support
 enabled*. Most likely, this will involve compiling Emacs from source with the
 `--with-modules` flag.
 
-Pymacs also requires Python (2.7 and up).
+Pymacs also requires Python (2.7; Python 3 support is in the works).
 
 Building
 --------
