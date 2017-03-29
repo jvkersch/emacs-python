@@ -26,8 +26,8 @@ static PyObject *module = NULL;
 
 /* Copy a string out of an emacs argument. Returns a new pointer to a string on
  * the heap. It's the user's responsibility to free this pointer. */
-static
-const char* copy_string_from_emacs(emacs_env *env, emacs_value arg)
+static const char*
+copy_string_from_emacs(emacs_env *env, emacs_value arg)
 {
     ptrdiff_t s = 1024;
     char *str = (char *)malloc(s);
@@ -35,7 +35,7 @@ const char* copy_string_from_emacs(emacs_env *env, emacs_value arg)
         /* TODO provide more info about what went wrong */
         return NULL;
     }
-    
+
     for (int i = 0; i < 2; i++) {
         if (env->copy_string_contents(env, arg, str, &s)) {
             return str;
@@ -54,8 +54,8 @@ const char* copy_string_from_emacs(emacs_env *env, emacs_value arg)
 }
 
 /* TODO docstring here */
-static
-void init_python_environment()
+static void
+init_python_environment()
 {
     Py_Initialize();
 
@@ -65,12 +65,12 @@ void init_python_environment()
 
 /* Get a string representation in "error_buf" of the last Python error that
    occurred. This clears out Python's error indicator. */
-static
-void py_err()
+static void
+py_err()
 {
     PyObject *ptype, *pvalue, *ptraceback, *py_err;
     char *msg = NULL;
-    
+
     PyErr_Fetch(&ptype, &pvalue, &ptraceback);
     PyErr_Clear();
     if (!pvalue)
@@ -79,7 +79,7 @@ void py_err()
     py_err = PyObject_Str(pvalue);
     if ( (!py_err) || !(msg = PyString_AsString(py_err)))
         msg = "<unknown error>";
-    
+
     /* Copy the string into buffer before discarding pvalue. */
     snprintf(error_buf, ERROR_BUF_SIZE, "Python error: %s", msg);
 
@@ -93,8 +93,8 @@ void py_err()
 
 /* Call a Python function referenced by name, with a given number of
  * arguments. Returns a *new ref* to the result. */
-static
-PyObject* call_python_function(const char *name, PyObject* args)
+static PyObject*
+call_python_function(const char *name, PyObject* args)
 {
     PyObject *v, *f;
 
@@ -108,11 +108,11 @@ PyObject* call_python_function(const char *name, PyObject* args)
         PyErr_Format(PyExc_AttributeError, "No such attribute: %s", name);
         goto error;
     }
-    
+
     v = PyObject_CallObject(f, args);
     if (v == NULL)
         goto error;
-    
+
     return v;
 
 error:
@@ -124,20 +124,20 @@ error:
 /* Execute a snippet of Python code in the embedded interpreter. Return value
  * is 0 if the execution completed successfully, or -1 (with an error set) if
  * not. */
-static
-int exec_python_code(const char *code)
+static int
+exec_python_code(const char *code)
 {
     PyObject *locals = PyModule_GetDict(module);
     if (locals == NULL)
         goto error;
 
     PyObject *v = PyRun_String(code, Py_file_input, locals, locals);
-    if (v == NULL) 
+    if (v == NULL)
         goto error;
-    
+
     Py_DECREF(v);
     return 0;
-    
+
 error:
     py_err();
     return -1;
@@ -145,8 +145,8 @@ error:
 
 
 /* Convert a single Emacs symbol to its equivalent Python representation. */
-static
-PyObject *convert_emacs_symbol(emacs_env *env, emacs_value symbol)
+static PyObject*
+convert_emacs_symbol(emacs_env *env, emacs_value symbol)
 {
     emacs_value typ = env->type_of(env, symbol);
     PyObject *item = NULL;
@@ -165,7 +165,7 @@ PyObject *convert_emacs_symbol(emacs_env *env, emacs_value symbol)
         item = PyList_New(size);
         if (item == NULL)
             goto error;
-        
+
         for (ptrdiff_t i = 0; i < size; i++) {
             PyObject *list_item = convert_emacs_symbol(
                 env, env->vec_get(env, symbol, i));
@@ -188,15 +188,15 @@ error:
 
 /* Convert an array of Emacs symbols to a Python tuple, by calling
  * convert_emacs_symbol for each element in the array. */
-static
-PyObject* convert_from_emacs(emacs_env *env, ptrdiff_t nargs, emacs_value *args)
+static PyObject*
+convert_from_emacs(emacs_env *env, ptrdiff_t nargs, emacs_value *args)
 {
     PyObject *args_tuple = PyTuple_New(nargs);
     if (args_tuple == NULL) {
         set_error("Could not allocate arguments tuple");
         return NULL;
     }
-    
+
     for (size_t i = 0; i < nargs; i++) {
         PyObject *arg = convert_emacs_symbol(env, args[i]);
         if (arg == NULL) {
@@ -214,32 +214,29 @@ PyObject* convert_from_emacs(emacs_env *env, ptrdiff_t nargs, emacs_value *args)
 /* Decrease refence count. This is a wrapper around the equivalent Python
  * macro, used as a callback by Emacs to clean up the data underlying a
  * user-ptr. */
-static
-void _PyObject_DecRef(void *obj)
+static void
+_PyObject_DecRef(void *obj)
 {
     Py_XDECREF(obj);
 }
 
 /* Convert a Python object to an equivalent Emacs object. If the conversion
  * cannot be done in a meaningful way, return a user-ptr. */
-static
-int convert_to_emacs(emacs_env *env, emacs_value* e_retval, PyObject *retval)
+static int
+convert_to_emacs(emacs_env *env, emacs_value* e_retval, PyObject *retval)
 {
     *e_retval = NULL;
-    
+
     /* Basic types */
     if (retval == Py_None) {
         *e_retval = env->intern(env, "nil");
     } else if (PyObject_TypeCheck(retval, &PyInt_Type)) {
         *e_retval = env->make_integer(env, PyInt_AsLong(retval));
-        Py_DECREF(retval);
     } else if (PyObject_TypeCheck(retval, &PyFloat_Type)) {
         *e_retval = env->make_float(env, PyFloat_AsDouble(retval));
-        Py_DECREF(retval);
     } else if (PyObject_TypeCheck(retval, &PyString_Type)) {
         *e_retval = env->make_string(env, PyString_AsString(retval),
                                      PyString_Size(retval));
-        Py_DECREF(retval);
     } else {
         /* Check for list type */
         Py_ssize_t len = PyObject_Length(retval);
@@ -250,7 +247,7 @@ int convert_to_emacs(emacs_env *env, emacs_value* e_retval, PyObject *retval)
                 set_error("Malloc failed");
                 return -1;
             }
-            
+
             for (Py_ssize_t i = 0; i < len; i++) {
                 PyObject *index = PyInt_FromLong(i);
                 PyObject *item = PyObject_GetItem(retval, index);
@@ -263,6 +260,7 @@ int convert_to_emacs(emacs_env *env, emacs_value* e_retval, PyObject *retval)
             free(args);
         } else {
             /* Make a user pointer and return an opaque Python object. */
+            Py_INCREF(retval);
             *e_retval = env->make_user_ptr(env, _PyObject_DecRef, retval);
         }
     }
@@ -280,7 +278,7 @@ static emacs_value
 Fpython_funcall(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
 {
     PyObject *py_args = NULL, *py_retval = NULL;
-    
+
     const char *name = copy_string_from_emacs(env, args[0]);
     if (name == NULL)
         goto error;
@@ -296,7 +294,8 @@ Fpython_funcall(emacs_env *env, ptrdiff_t nargs, emacs_value args[], void *data)
     emacs_value retval;
     if (convert_to_emacs(env, &retval, py_retval) < 0)
         goto error;
-    
+
+    Py_DECREF(py_retval);
     Py_DECREF(py_args);
     return retval;
 
@@ -361,7 +360,7 @@ emacs_module_init (struct emacs_runtime *ert)
         /* FIXME: don't rely on global module */
         return -1;
     }
-    
+
 #define DEFUN(lsym, csym, amin, amax, doc, data) \
     bind_function(env, lsym, \
                   env->make_function (env, amin, amax, csym, doc, data))
@@ -370,8 +369,10 @@ emacs_module_init (struct emacs_runtime *ert)
           "Call a Python function in the embedded interpreter.",
           NULL);
 
-    DEFUN("python-exec", Fpython_exec, 1, 1, 
+    DEFUN("python-exec", Fpython_exec, 1, 1,
           "Execute Python code in the embedded interpreter.", NULL);
+
+#undef DEFUN
 
     provide (env, "pymacs");
     return 0;
