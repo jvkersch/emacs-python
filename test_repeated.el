@@ -1,5 +1,5 @@
 (add-to-list 'load-path ".")
-(require 'pymacs)
+(require 'emacs-python)
 
 ;; Run the same test a number of times in a loop. This is good to detect memory
 ;; issues; double free/Py_DECREF will usually cause this to segfault.

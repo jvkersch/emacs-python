@@ -1,5 +1,5 @@
 (add-to-list 'load-path ".")
-(require 'pymacs)
+(require 'emacs-python)
 
 (ert-deftest test-call-builtin-len-function ()
   :tags '(run-builtin-len)
