@@ -1,5 +1,5 @@
 (add-to-list 'load-path ".")
-(require 'pymacs)
+(require 'emacs-python)
 
 (python-exec "
 def fun_noargs():

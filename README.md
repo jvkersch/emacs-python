@@ -1,24 +1,24 @@
-Pymacs: a Python module for Emacs
+Emacs-Python: a Python module for Emacs
 =================================
 
-Pymacs is a very lightweight bridge between Emacs 25 and Python. It provides an
+Emacs-Python is a very lightweight bridge between Emacs 25 and Python. It provides an
 Emacs extension module that runs the Python interpreter inside Emacs, so that
 Python functions can be run transparently from within Emacs.
 
 Requirements
 ------------
 
-Pymacs requires a recent build of Emacs (>= 25.1) *with module support
+Emacs-Python requires a recent build of Emacs (>= 25.1) *with module support
 enabled*. Most likely, this will involve compiling Emacs from source with the
 `--with-modules` flag.
 
-Pymacs also requires Python (2.7; Python 3 support is in the works).
+Emacs-Python also requires Python (2.7; Python 3 support is in the works).
 
 Building
 --------
 
 To build, run `make`. If there are no errors, you should have a file
-`pymacs.so` in the `src/` folder.
+`emacs-python.so` in the `src/` folder.
 
 If you want to build against a non-standard Python interpreter, make sure that
 the `python-config` script refers to that interpreter before building (by
@@ -27,11 +27,11 @@ editing the Makefile if necessary).
 Walkthough
 ----------
 
-To use, copy the `pymacs.so` library to a directory that's on the Emacs `load-path`.
+To use, copy the `emacs-python.so` library to a directory that's on the Emacs `load-path`.
 
 From within Emacs, run
 ```elisp
-(require 'pymacs)
+(require 'emacs-python)
 ```
 
 To send a Python snippet to the embedded interpreter, use `python-exec`:
@@ -55,4 +55,4 @@ return a user-ptr.
 
 License
 -------
-Pymacs is released under the [GPL, version 3.0](http://www.gnu.org/licenses/gpl-3.0.en.html).
+Emacs-Python is released under the [GPL, version 3.0](http://www.gnu.org/licenses/gpl-3.0.en.html).

@@ -374,6 +374,6 @@ emacs_module_init (struct emacs_runtime *ert)
 
 #undef DEFUN
 
-    provide (env, "pymacs");
+    provide (env, "emacs-python");
     return 0;
 }

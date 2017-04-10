@@ -4,7 +4,7 @@ PY_CFLAGS := $$(python-config --cflags)
 PY_LDFLAGS := $$(python-config --ldflags)
 RPATH := $$(tools/find_rpath.py)
 
-pymacs.so: emacs_python.o
+emacs-python.so: emacs_python.o
 	$(CC) -shared $< -o $@ $(PY_LDFLAGS) $(LDFLAGS) -Wl,-rpath,$(RPATH)
 
 %.o: %.c
@@ -13,4 +13,4 @@ pymacs.so: emacs_python.o
 .PHONY: clean tests
 
 clean:
-	rm -f pymacs.so *.o
+	rm -f emacs-python.so *.o
