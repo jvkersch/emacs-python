@@ -53,13 +53,20 @@ copy_string_from_emacs(emacs_env *env, emacs_value arg)
     return NULL;
 }
 
-/* TODO docstring here */
+/* Initialize the Python environment. */
 static void
 init_python_environment()
 {
     Py_Initialize();
 
     module = PyImport_AddModule("__main__");
+}
+
+/* Clean up the Python environment. */
+static void
+finalize_python_environment()
+{
+    Py_Finalize();
 }
 
 
@@ -373,6 +380,11 @@ emacs_module_init (struct emacs_runtime *ert)
           "Execute Python code in the embedded interpreter.", NULL);
 
 #undef DEFUN
+
+    /* Register a cleanup handler for the embedded interpreter. Since we're not
+     * manipulating Emacs objects this can be done at any time when the
+     * interpreter exits. */
+    atexit(finalize_python_environment);
 
     provide (env, "emacs-python");
     return 0;
