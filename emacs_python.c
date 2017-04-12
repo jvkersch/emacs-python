@@ -30,7 +30,7 @@ static const char*
 copy_string_from_emacs(emacs_env *env, emacs_value arg)
 {
     ptrdiff_t s = 1024;
-    char *str = (char *)malloc(s);
+    char *str = (char *)malloc(s), *new_str;
     if (str == NULL) {
         /* TODO provide more info about what went wrong */
         return NULL;
@@ -43,11 +43,13 @@ copy_string_from_emacs(emacs_env *env, emacs_value arg)
 
         /* The buffer wasn't big enough to capture the string from
          * emacs. Realloc and try again. */
-        str = reallocf(str, s);
-        if (str == NULL) {
+        new_str = (char *)realloc(str, s);
+        if (new_str == NULL) {
+            free(str);
             /* TODO provide more info about what went wrong */
             return NULL;
         }
+        str = new_str;  /* TODO: use reallocf */
     }
 
     return NULL;
